@@ -2,6 +2,8 @@
 
 Lemonex is an extension to the lemon parser, developed to include a builtin lexer.
 
+This is the git repository. If you prefer fossil, use this: https://chiselapp.com/user/renjipanicker/repository/lemonex/home
+
 The following is a minimal example:
 ```
 %include {
