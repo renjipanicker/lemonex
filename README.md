@@ -165,3 +165,6 @@ Lemonex has 3 debug levels - 0, 1 and 2, indicating increasing levels of debug i
 In LEMONEX mode, the error token is always enabled, and used on lexer error.
 
 Lemonex has been developed against the most recent commit on sqlite3 trunk as of 22nd June 2015.
+
+<h2>Contact</h2>
+Any feedback, comments, suggestions will be gratefully accepted and worked on. Drop me a note at renjipanicker@gmail.com
