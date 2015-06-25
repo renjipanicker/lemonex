@@ -3,7 +3,7 @@
 Lemonex is an extension to the lemon parser, developed to include a builtin lexer.
 
 The following is a minimal example:
-<verbatim>
+```
 %include {
 #include <assert.h>
 #include <stdlib.h>
@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 }
-</verbatim>
+```
 
 <h2>Symbol definition</h2>
 Lemonex automatically matches the symbol on the LHS to any symbol of the same name defined in the grammar. It generates warning on symbols that do not have a regex defined.
@@ -47,7 +47,7 @@ where Parse is replaced by the prefix specified by %name
 <h2>Lexer modes</h2>
 It can work in multiple lexer modes. The modes are defined by the %lexer_mode command, as follows:
 
-<verbatim>
+```
 %start_symbol rModule
 rModule ::= URL EOL.
 EOL ::= "\n".
@@ -58,7 +58,7 @@ ENTER_MLCOMMENT ::= "/\*". [MLCOMMENT]
 ENTER_MLCOMMENT ::= "/\*". [MLCOMMENT]
 LEAVE_MLCOMMENT ::= "\*/". [<]
 WS ::= ".*".
-</verbatim>
+```
 
 The lexer starts in the first mode which has been defined. If no mode was explicitly defined, a default mode named INITMODE is created.
 
@@ -73,16 +73,16 @@ The nesting depth is defined using %lexer_nestingdepth, with a default value of 
 Lemonex works with a subset of the regular expression syntax. It can handle *, + and ? operators, as well as [] for defining classes, and () for grouping.
 
 Further, Lemonex supports limited capture functionality. for example:
-<verbatim>
+```
 STRING ::= !"'" ".*" !"'".
-</verbatim>
+```
 This defines a string defined within single quotes. The single quotes are defined separately, prefixed with an exclamation indicating that it should be added to the captured text.
 
 Lemonex has a limitation, in that the capture definition cannot overlap. For example:
-<verbatim>
+```
 STRING1 ::= !"'" "ABC" !"'".
 STRING2 ::=  "'" "DEF"  "'".
-</verbatim>
+```
 This will give an error. Since Lemonex has a lookahead of 1 and cannot backtrack, it cannot go back and re-capture the quote when it realises that the input will not match STRING1.
 
 <h2>Regular expression classes</h2>
@@ -94,19 +94,19 @@ It can handle a few classes such as:
 <h2>Regular expression loop exit</h2>
 Lemonex has two mechanisms for breaking out of * loops.
 For regular expressions that end with a dot-star, such as:
-<verbatim>
+```
 EOL ::= "?".
 STRING ::=  "ABC.*".
 WS ::= " ".
-</verbatim>
+```
 It will read the input ABC, and then keep reading characters until it finds either a ? or a space. That is, until it finds any character that starts another symbol in the current mode.
 
 Whereas for regular expressions that end with a not-star, such as:
-<verbatim>
+```
 EOL ::= "?".
 STRING ::=  "ABC[^;]*".
 WS ::= " ".
-</verbatim>
+```
 It will keep reading the input, including any ? or spaces, until it finds a ;
 
 <h2>Default token</h2>
@@ -126,9 +126,9 @@ This block is called whenever
 
 <h2>Action code</h2>
 Lemonex supports match actions, code that executes when any symbol is matched. This is similar to the reduce action defined in the grammar. This allows the capture to be modified before it gets sent to the parser. For example:
-<verbatim>
+```
 WORD ::= "[\r\n\t ]+". {$$.buf[0] = ' ';$$.buf[1] = 0;}
-</verbatim>
+```
 This code converts any whitespace character including newlines, to a single space before getting sent to the parser.
 
 <h2>Lexer code</h2>
@@ -137,13 +137,13 @@ This allows one to define function and other constructs that can be accessed fro
 
 <h2>Unicode handling</h2>
 Lemonex can handle UTF8 natively. For example:
-<verbatim>
+```
 rModule ::= HINDI_WORD JAPANESE_WORD EOL.
 EOL  ::= "[\.\!\?]".
 HINDI_WORD ::= "आप".
 JAPANESE_WORD ::= "なか".
 WS ::= " ".
-</verbatim>
+```
 Lemonex has full support for Unicode letter, digit and space character classes.
 
 <h2>Miscellaneous</h2>
