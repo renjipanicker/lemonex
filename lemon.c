@@ -29,12 +29,15 @@ extern int access(const char *path, int mode);
 #ifdef __cplusplus
 }
 #endif
-#else
+#else /* __WIN32__ */
 #include <unistd.h>
 #ifdef LEMONEX
 #include <sys/stat.h>
-#include <errno.h>
 #endif
+#endif
+
+#ifdef LEMONEX
+#include <errno.h>
 #endif
 
 /* #define PRIVATE static */
@@ -3240,7 +3243,7 @@ static void handle_e_option(char *z){
 }
 
 static void handle_d_option(char *z){
-#if defined(WIN32)
+#if defined(_WIN32)
     int rv = _mkdir(z);
 #else
     int rv = mkdir(z, S_IRWXU | S_IRGRP | S_IROTH);

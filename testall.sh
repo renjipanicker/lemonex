@@ -22,6 +22,36 @@ while [[ "$1" != "" ]]; do
   shift
 done
 
+OSYS=""
+if [ "$(uname)" == "Darwin" ]; then
+  OSYS=OSX
+  EXEFILE=lemon.osx
+elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+  OSYS=LINUX
+  EXEFILE=lemon.lnx
+elif [ "$(expr substr $(uname -s) 1 9)" == "CYGWIN_NT" ]; then
+  OSYS=CYGWIN
+  EXEFILE=lemon.exe
+  if [ -n "${VS140COMNTxOOLS+1}" ]; then
+    VST=$VS140COMNTOOLS
+  elif [ -n "${VS120COMNTOOLS+1}" ]; then
+    VST=$VS120COMNTOOLS
+  elif [ -n "${VS110COMNTOOLS+1}" ]; then
+    VST=$VS110COMNTOOLS
+  else
+    echo "No compatible Visual Studio version found"
+    exit 1
+  fi
+
+  SUFX=${VST#*Visual Studio*\\}
+  WVSDIR=${VST%"$SUFX"}
+  VSDIR=`cygpath -u "$WVSDIR"`
+  PATH=$PATH:${VSDIR}VC/bin
+  INCLUDE=${WVSDIR}VC\\include
+  LIB="${WVSDIR}VC\\lib"
+  LIB2="${WVSDIR}..\\Microsoft SDKs\Windows\v7.1A\Lib"
+fi
+
 rm -f test.c test.h test.out
 
 PLIST=
@@ -84,20 +114,45 @@ function chk {
   return 0
 }
 
-clang -g -DLEMONEX_DBG=$LDBG -o ./lemon.osx ./lemon.c
+case $OSYS in
+   OSX)
+     clang -g -DLEMONEX_DBG=$LDBG -o $EXEFILE ./lemon.c
+     ;;
+
+   CYGWIN)
+     cl.exe -nologo -I"$INCLUDE" -DLEMONEX_DBG=$LDBG lemon.c -link -LIBPATH:"$LIB" -LIBPATH:"$LIB2"
+     ;;
+
+   *)
+     echo 'other OS (or missing cases for above OSs)' 
+     ;;
+esac
+
 if [ $? -ne 0 ]; then
   echo error compiling lemon
   exit 1
 fi
 
 for MODE in $MLIST; do
-  ./lemon.osx T=./lempar.c D=$MODE d=./ test.y
+  ./$EXEFILE T=./lempar.c D=$MODE d=./ test.y
   chk G $? $MODE "error generating parser in $MODE"
   if [ $? -ne 0 ]; then
     continue
   fi
 
-  clang -g -D$MODE -o test test.c
+  case $OSYS in
+     OSX)
+       clang -g -D$MODE -o test test.c
+       ;;
+
+     CYGWIN)
+       cl.exe -nologo -I"$INCLUDE" -D$MODE test.c -link -LIBPATH:"$LIB" -LIBPATH:"$LIB2"
+       ;;
+
+     *)
+       echo 'other OS (or missing cases for above OSs)' 
+       ;;
+  esac
   chk C $? $MODE "error compiling parser in $MODE"
   if [ $? -ne 0 ]; then
     continue
