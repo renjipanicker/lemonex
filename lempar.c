@@ -3,8 +3,11 @@
 */
 /* First off, code is included that follows the "include" declaration
 ** in the input grammar file. */
-#include <stdio.h>
 %%
+/* The include code might contain pch header, so include stdio.h here */
+#include <stdio.h>
+#define LEMONEX 1
+
 /* Next is all token values, in a form suitable for use by makeheaders.
 ** This section will be null unless lemon is run with the -m switch.
 */
@@ -106,7 +109,7 @@ static int lx_enternesting(
   lxpLexer->nestingstack[lxpLexer->nestinglevel].count = 0;
   lxpLexer->nestingstack[lxpLexer->nestinglevel].prev_state = prev_state;
   ++lxpLexer->nestinglevel;
-#if LEMONEX_DBG>=2
+#if LEMONEX_DBGLVL>=2
   printf("NEST:enter-level:%d(count:%d, prev_state:%d\n",
         lxpLexer->nestinglevel,
         lxpLexer->nestingstack[lxpLexer->nestinglevel-1].count,
@@ -120,7 +123,7 @@ static void lx_renewnesting(
 )
 {
   ++lxpLexer->nestingstack[lxpLexer->nestinglevel-1].count;
-#if LEMONEX_DBG>=2
+#if LEMONEX_DBGLVL>=2
   printf("NEST:renew-count:%d\n", lxpLexer->nestingstack[lxpLexer->nestinglevel-1].count);
 #endif
 }
@@ -129,19 +132,19 @@ static int lx_leavenesting(
   lxLexer *lxpLexer           /* The lexer */
 )
 {
-#if LEMONEX_DBG>=2
+#if LEMONEX_DBGLVL>=2
   printf("NEST:leave:%d\n", lxpLexer->nestingstack[lxpLexer->nestinglevel-1].count);
 #endif
   if(lxpLexer->nestingstack[lxpLexer->nestinglevel-1].count == 0){
     lxpLexer->lxstate = lxpLexer->nestingstack[lxpLexer->nestinglevel-1].prev_state;
     --lxpLexer->nestinglevel;
-#if LEMONEX_DBG>=2
+#if LEMONEX_DBGLVL>=2
     printf("NEST:leave-level:%d, goto:%d\n", lxpLexer->nestinglevel, lxpLexer->lxstate);
 #endif
     return 1;
   }
   --lxpLexer->nestingstack[lxpLexer->nestinglevel-1].count;
-#if LEMONEX_DBG>=2
+#if LEMONEX_DBGLVL>=2
   printf("NEST:leave-count:%d\n", lxpLexer->nestingstack[lxpLexer->nestinglevel-1].count);
 #endif
   return 0;
@@ -157,7 +160,7 @@ static int lx_leavenesting(
 #endif
 
 #if ParseTOKENTYPE_DEF
-#if LEMONEX_DBG>=2
+#if LEMONEX_DBGLVL>=2
 #define LX_FREETOK {printf("FREETOK:%s\n", (yypminor->yy0).buf);free((yypminor->yy0).buf);}
 #else
 #define LX_FREETOK {free((yypminor->yy0).buf);}
@@ -181,14 +184,14 @@ static void lx_tokenctor(
 #if ParseTOKENTYPE_DEF
   switch(op){
     case LX_TOK_RESET:
-#if LEMONEX_DBG>=1
+#if LEMONEX_DBGLVL>=1
     printf("*****CREATE_TOKEN:(%d,%d)\n", lxpLexer->lxrow, lxpLexer->lxcol);
 #endif
       break;
     case LX_TOK_CAPTURE:
       break;
     case LX_TOK_FINALIZE:
-#if LEMONEX_DBG>=1
+#if LEMONEX_DBGLVL>=1
       printf("*****FINALIZE_TOKEN(%d,%d):%s\n", lxpLexer->token.row, lxpLexer->token.col, lxpLexer->token.buf);
 #endif
       break;
@@ -215,7 +218,7 @@ static void lx_tokenctor(
   }
 
   while((lxpLexer->token.caplen + len) >= lxpLexer->token.buflen){
-#if LEMONEX_DBG>=1
+#if LEMONEX_DBGLVL>=1
     printf("*****RESIZE_TOKEN\n");
 #endif
     lxpLexer->token.buf = realloc(lxpLexer->token.buf, lxpLexer->token.buflen + LX_CAPBUF_CHUNKSIZE);
@@ -226,7 +229,7 @@ static void lx_tokenctor(
     lxpLexer->token.buf[lxpLexer->token.caplen] = ch[i];
   }
   lxpLexer->token.buf[lxpLexer->token.caplen] = 0;
-#if LEMONEX_DBG>=1
+#if LEMONEX_DBGLVL>=1
   printf("*****CAT_TOKEN:%s\n", lxpLexer->token.buf);
 #endif
 #else
@@ -344,7 +347,7 @@ static int lx_advance(
 
 %%
 
-/* returns 1 is ch is in cls */
+/* returns 1 if ch is in cls */
 static int lx_isclass(int ch, int* clsl){
   int i = 0;
   while(clsl[i] != 0) {
@@ -360,11 +363,13 @@ static int lx_isclass(int ch, int* clsl){
 #define LX_ISDIGIT(ch) (lx_isclass(ch, lxcls_d))
 #define LX_ISWORD(ch) (((LX_ISLETTER(ch) == 1)||(LX_ISDIGIT(ch) == 1))?:1:0)
 #define LX_ISSPACE(ch) (lx_isclass(ch, lxcls_s))
+#define LX_ISENDL(ch) (lx_isclass(ch, lxcls_e))
 
 #define LX_ADVANCE(ls) {curr_pos = p;if(lx_advance(lxpLexer, &p, buf_end, &curr_len, &ch) != 0){lxpLexer->lxstate=ls;return ch;}}
 #define LX_RESET lx_tokenctor(lxpLexer, LX_TOK_RESET, 0, 0, 0)
 #define LX_SEND(major_token) lx_tokenctor(lxpLexer, LX_TOK_FINALIZE, major_token, 0, 0);Parse(yyp, major_token, lxpLexer->token ParseARG_VNAME)
 #define LX_CAPTURE(curr_pos, curr_len) lx_tokenctor(lxpLexer, LX_TOK_CAPTURE, 0, curr_pos, curr_len)
+#define LX_SENDERR(err_token) LX_CAPTURE(curr_pos, curr_len);LX_SEND(err_token)
 
 /*
 ** This function allocates a new lexer.
@@ -1290,7 +1295,7 @@ int lx_alloc_parser(
   ((struct lxLexer*)(*plxp))->filename = filename;
 #endif
 
-#if LEMONEX_DBG>=1
+#if LEMONEX_DBGLVL>=1
   if(dbgpfx != 0) {
     ParseTrace(stdout, (char*)dbgpfx);
   }
@@ -1357,8 +1362,14 @@ int ParseReadFile(
     return 1;
   }
 
+#ifdef _WIN32
+  FILE* fp = 0;
+  errno_t err = fopen_s(&fp, filename, "r");
+  if (err != 0) {
+#else
   FILE* fp = fopen(filename, "r");
-  if(fp == 0) {
+  if (fp == 0) {
+#endif
     printf("unable to open file\n");
     fclose(fp);
     lx_free_parser(&yyp, &lxp);
