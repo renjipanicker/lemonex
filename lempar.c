@@ -204,7 +204,7 @@ static void lx_tokenctor(
 
   assert((op == LX_TOK_CAPTURE)||(op == LX_TOK_FINALIZE));
   if(lxpLexer->token.buf == 0){
-    lxpLexer->token.buf = malloc(LX_CAPBUF_CHUNKSIZE);
+    lxpLexer->token.buf = (char*)malloc(LX_CAPBUF_CHUNKSIZE);
     lxpLexer->token.buf[0] = 0;
     lxpLexer->token.buflen = LX_CAPBUF_CHUNKSIZE;
     lxpLexer->token.caplen = 0;
@@ -221,7 +221,7 @@ static void lx_tokenctor(
 #if LEMONEX_DBGLVL>=1
     printf("*****RESIZE_TOKEN\n");
 #endif
-    lxpLexer->token.buf = realloc(lxpLexer->token.buf, lxpLexer->token.buflen + LX_CAPBUF_CHUNKSIZE);
+    lxpLexer->token.buf = (char*)realloc(lxpLexer->token.buf, lxpLexer->token.buflen + LX_CAPBUF_CHUNKSIZE);
     lxpLexer->token.buflen += LX_CAPBUF_CHUNKSIZE;
   }
   for(int i = 0; i < len; ++i, ++lxpLexer->token.caplen){
@@ -1370,8 +1370,7 @@ int ParseReadFile(
   FILE* fp = fopen(filename, "r");
   if (fp == 0) {
 #endif
-    printf("unable to open file\n");
-    fclose(fp);
+    printf("ParseReadFile:unable to open file:%s\n", filename);
     lx_free_parser(&yyp, &lxp);
     return 1;
   }
