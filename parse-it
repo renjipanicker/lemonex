@@ -1,0 +1,2 @@
+lemonex T=./lempar.c  d=./ $*
+#gcc -std=c99 

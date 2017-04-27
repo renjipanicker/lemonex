@@ -1,0 +1,3 @@
+example=example
+./lemon.lnx T=./lempar.c  d=./ $example.y
+gcc -std=c99 -o $example $example.c
