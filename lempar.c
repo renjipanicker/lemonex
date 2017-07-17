@@ -271,12 +271,14 @@ static void lx_tokenctor(
 */
 static int lx_advance(
   lxLexer *lxpLexer,           /* The lexer */
+  char** curr_pos,
   char** pp,
   char* buf_end,
   int* plen,
   int* pch
 ){
   char* p = *pp;
+  (*curr_pos) = (*pp);
   if(p == buf_end){
     *pch = 0;
     return 0;
@@ -285,6 +287,7 @@ static int lx_advance(
   ++lxpLexer->lxcol;
   if((*p == '\r') && (*(p+1) == '\n')) {
     ++p;
+    ++(*curr_pos);
     assert(*p == '\n');
   }
   if(*p == '\n') {
@@ -372,7 +375,7 @@ static int lx_isclass(int ch, int* clsl){
 #define LX_ISSPACE(ch) (lx_isclass(ch, lxcls_s))
 #define LX_ISENDL(ch) (lx_isclass(ch, lxcls_e))
 
-#define LX_ADVANCE(ls) {curr_pos = p;if(lx_advance(lxpLexer, &p, buf_end, &curr_len, &ch) != 0){lxpLexer->lxstate=ls;return ch;}}
+#define LX_ADVANCE(ls) {if(lx_advance(lxpLexer, &curr_pos, &p, buf_end, &curr_len, &ch) != 0){lxpLexer->lxstate=ls;return ch;}}
 #define LX_RESET lx_tokenctor(lxpLexer, LX_TOK_RESET, 0, 0, 0)
 #define LX_SEND(major_token) lx_tokenctor(lxpLexer, LX_TOK_FINALIZE, major_token, 0, 0);Parse(yyp, major_token, lxpLexer->token ParseARG_VNAME)
 #define LX_CAPTURE(curr_pos, curr_len) lx_tokenctor(lxpLexer, LX_TOK_CAPTURE, 0, curr_pos, curr_len)
@@ -1393,10 +1396,10 @@ int ParseReadFile(
 
 #ifdef _WIN32
   FILE* fp = 0;
-  errno_t err = fopen_s(&fp, filename, "r");
+  errno_t err = fopen_s(&fp, filename, "rb");
   if (err != 0) {
 #else
-  FILE* fp = fopen(filename, "r");
+  FILE* fp = fopen(filename, "rb");
   if (fp == 0) {
 #endif
     printf("ParseReadFile:unable to open file:%s\n", filename);
@@ -1406,8 +1409,8 @@ int ParseReadFile(
 
   char buf[1024];
   char* pbuf = buf;
-  long cnt = 0;
-  while((cnt = fread(pbuf, 1, 1024 - (pbuf - buf) - 1, fp)) > 0) {
+  while(!feof(fp)) {
+    size_t cnt = fread(pbuf, 1, (size_t)(1024 - (pbuf - buf) - 1), fp);
     char* buf_end = buf+(pbuf-buf)+cnt;
     *buf_end = 0;
     int is_final = 0;
