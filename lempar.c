@@ -1439,4 +1439,53 @@ int ParseReadFile(
   lx_free_parser(&yyp, &lxp);
   return 0;
 }
+
+#ifdef __cplusplus
+/* Helper function to read and parse a stream */
+int ParseReadStream(
+  std::istream& is
+  ,const char *filename
+  ,const char* dbgpfx
+  ParseARG_PDECL               /* Optional %extra_argument parameter */
+){
+  void *yyp = 0;
+  void *lxp = 0;
+  if(lx_alloc_parser(&yyp, &lxp, filename, dbgpfx) != 0){
+    return 1;
+  }
+
+  char buf[1024];
+  char* pbuf = buf;
+  size_t cnt = 0;
+  while(!is.eof()) {
+    is.read(buf, 1024);
+    cnt = is.gcount();
+    char* buf_end = buf+(pbuf-buf)+cnt;
+    *buf_end = 0;
+    int is_final = 0;
+    if((buf_end - buf) < 1023) {is_final = 1;}
+#if ParseLX_INTEGRATEDMODE
+    int rc = ParseRead(yyp, buf, buf_end, is_final ParseARG_VNAME);
+#else
+    int rc = ParseRead(yyp, lxp, buf, buf_end, is_final ParseARG_VNAME);
+#endif
+    if(rc < 0){
+      printf("error in file:%d\n", rc);
+      lx_free_parser(&yyp, &lxp);
+      return 1;
+    }
+    if(rc > 0){
+      char* ebuf = buf_end - rc;
+      for(int i = 0; i < rc; ++i) {
+        buf[i] = ebuf[i];
+      }
+    }
+    pbuf = buf+rc;
+  }
+
+  lx_free_parser(&yyp, &lxp);
+  return 0;
+}
+#endif /* __cplusplus */
+
 #endif /* LEMONEX */
