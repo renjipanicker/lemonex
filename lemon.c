@@ -7052,9 +7052,9 @@ void Lexer_generate_class_list(struct lemon *lemp, FILE *fp, int *lineno){
       }
       fprintf(fp, "static int lxcls_%c[] = {\n", lemp->lxclasslist[i+1]);(*lineno)++;
     }else{
-      fprintf(fp, "  0x%-6X,0x%-6X,", lemp->lxclasslist[i], lemp->lxclasslist[i+1]);(*lineno)++;
+      fprintf(fp, "  0x%-6X,0x%-6X,", lemp->lxclasslist[i], lemp->lxclasslist[i+1]);
       if((i%8) == 0){
-        fprintf(fp, "\n");
+        fprintf(fp, "\n");(*lineno)++;
       }
     }
     i += 2;
